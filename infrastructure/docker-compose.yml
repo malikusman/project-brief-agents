@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-example}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.backend
+    env_file:
+      - ../.env
+    depends_on:
+      - mongodb
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/var/project-brief/uploads
+
+  agents:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.agents
+    env_file:
+      - ../.env
+    depends_on:
+      - mongodb
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/var/project-brief/uploads
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.frontend
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://backend:8000/api}
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  mongo_data:
+  uploads:

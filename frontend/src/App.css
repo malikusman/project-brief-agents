@@ -1,0 +1,35 @@
+#root {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: system-ui, sans-serif;
+}
+
+.app-shell {
+  display: grid;
+  gap: 2rem;
+}
+
+.intro,
+.status {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.intro h1 {
+  margin-bottom: 0.75rem;
+}
+
+.status h2 {
+  margin-bottom: 0.5rem;
+}
+
+.status code {
+  font-size: 0.95rem;
+  background: rgba(99, 102, 241, 0.12);
+  border-radius: 6px;
+  padding: 0.15rem 0.35rem;
+}

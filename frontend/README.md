@@ -1,18 +1,25 @@
-## Frontend Shell
+# Project Brief Frontend Shell
 
-This directory will contain the React (TypeScript) client.
+This package hosts a lightweight React + Vite TypeScript app that will eventually be replaced by the dedicated UI team. It currently provides:
 
-Initial goals:
-- provide a minimal UI to initiate projects, chat with the intake agent, and display generated briefs
-- integrate with backend APIs via REST/tRPC
-- support local development via Vite dev server
+- A placeholder shell describing the planned conversational intake and brief preview surfaces.
+- Environment-driven API configuration (`VITE_API_BASE_URL`) surfaced directly in the UI.
+- Basic styling and a smoke-test rendered via Vitest + Testing Library.
 
-Planned layout:
-- `src/` — components, routes, and hooks
-- `public/` — static assets
-- `tests/` — Vitest/Jest suite
+## Getting started
 
-Tooling expectations:
-- Node version managed via `.nvmrc` (to be added)
-- Styling TBD (Tailwind or component library)
-- Dockerized for inclusion in `docker-compose`
+```bash
+npm install
+npm run dev
+```
+
+Point `VITE_API_BASE_URL` (see `.env.example`) at the FastAPI backend or any other service you want to test against.
+
+## Testing & builds
+
+```bash
+npm run test -- --run   # executes Vitest suite in happy-dom
+npm run build           # type-checks and produces a production bundle
+```
+
+Vite currently emits a warning because the local Node version is slightly behind the recommended release (`20.19+` or `22.12+`). The build still runs successfully, but we plan to align the runtime version in Docker later.

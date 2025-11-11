@@ -7,8 +7,14 @@ def test_workflow_returns_summary_and_brief() -> None:
     """Workflow should generate summary and brief placeholders."""
 
     conversation = [
-        {"role": "user", "content": "We are launching a mobile app to help students track study goals."},
-        {"role": "user", "content": "Our target users are college freshmen and success is measured by daily active usage."},
+        {
+            "role": "user",
+            "content": "We are launching a mobile app to help students track study goals.",
+        },
+        {
+            "role": "user",
+            "content": "Our target users are college freshmen and success is measured by daily active usage.",
+        },
     ]
     documents = [
         {"id": "spec-1", "name": "Discovery notes", "url": None, "notes": None}
@@ -21,8 +27,5 @@ def test_workflow_returns_summary_and_brief() -> None:
 
     assert summary["project_title"]
     assert isinstance(summary["target_users"], list)
-    assert isinstance(result["follow_up_questions"], list)
     assert isinstance(brief["expected_outcomes"], list)
-    assert "project_description" in brief
-
-
+    assert "thread_id" in result

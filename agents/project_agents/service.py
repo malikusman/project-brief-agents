@@ -1,6 +1,6 @@
 """High-level interface for running the LangGraph workflow."""
 
-from typing import Iterable, Mapping, cast
+from typing import Iterable, Mapping
 
 from project_agents.graphs.state import (
     ConversationTurn,
@@ -9,14 +9,14 @@ from project_agents.graphs.state import (
     initialize_state,
 )
 from project_agents.graphs.workflow import build_project_brief_graph
-from project_agents.models import AgentRunModel, BriefModel, SummaryModel
+from project_agents.models import BriefPayload, LovableBrief, SummaryPayload
 
 
 def run_project_brief_workflow(
     conversation: Iterable[Mapping[str, str]],
     documents: Iterable[Mapping[str, str | None]] | None = None,
     thread_id: str | None = None,
-) -> ProjectState:
+) -> dict:
     """Execute the workflow using the provided user input."""
 
     conversation_list = [
@@ -43,19 +43,18 @@ def run_project_brief_workflow(
     thread_identifier = thread_id or generate_thread_id()
     config = {"configurable": {"thread_id": thread_identifier}}
     result = graph.invoke(initial_state, config=config)
-    project_state = cast(ProjectState, result)
-    project_state["thread_id"] = thread_identifier
-    project_state.setdefault("follow_up_questions", [])
 
-    summary_model = SummaryModel(**project_state.get("summary", {}))
-    brief_model = BriefModel(**project_state.get("brief", {}))
-    agent_model = AgentRunModel(
-        summary=summary_model,
-        brief=brief_model,
-        follow_up_questions=project_state.get("follow_up_questions", []),
+    summary_payload = SummaryPayload(**result.get("summary", {}))
+    brief_payload = LovableBrief(**result.get("brief", {}))
+    follow_ups = result.get("follow_up_questions", [])
+
+    agent_payload = BriefPayload(
+        summary=summary_payload,
+        brief=brief_payload,
+        follow_up_questions=follow_ups,
         thread_id=thread_identifier,
     )
-    return cast(ProjectState, agent_model.model_dump())
+    return agent_payload.model_dump()
 
 
 def generate_thread_id() -> str:

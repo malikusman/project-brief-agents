@@ -24,8 +24,7 @@ class SummaryModel(BaseModel):
     timeline: str | None = None
     resources: List[str] = Field(default_factory=list)
     documents: List[str] = Field(default_factory=list)
-    differentiators: List[str] = Field(default_factory=list)
-    opportunities: List[str] = Field(default_factory=list)
+    opportunity_areas: List[str] = Field(default_factory=list)
 
 
 class BriefModel(BaseModel):
@@ -34,14 +33,14 @@ class BriefModel(BaseModel):
     purpose: str
     expected_outcomes: List[str]
     business_model: List[str]
-    success_metrics: List[str]
-    target_users: List[str]
-    risks: List[str]
+    constraints: List[str]
     timeline: str
-    opportunity_explorer: List[str]
+    target_users: List[str]
+    documents: List[str]
+    opportunity_areas: List[str]
     suggested_reads: List[str]
     ideas_board: List[str]
-    documents: List[str]
+    success_metrics: List[str]
 
 
 class AgentRunModel(BaseModel):
@@ -54,5 +53,3 @@ class AgentRunModel(BaseModel):
 class ConversationTurn(BaseModel):
     role: Literal["user", "assistant", "system"] = "user"
     content: str
-
-

@@ -45,11 +45,11 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
             "project_title": "Test Project",
             "target_users": ["designers"],
             "success_metrics": ["increase adoption"],
-            "constraints": [],
+            "constraints": ["Budget"],
             "timeline": "Q3",
             "resources": ["Product roadmap"],
             "documents": ["Discovery Doc"],
-            "opportunities": ["Deliver the solution: Build the best app"],
+            "opportunity_areas": ["Deliver the solution: Build the best app"],
         },
         "brief": {
             "project_title": "Test Project",
@@ -57,14 +57,14 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
             "purpose": "Help teams stay productive.",
             "expected_outcomes": ["increase adoption"],
             "business_model": ["Subscription model"],
-            "success_metrics": ["increase adoption"],
-            "target_users": ["designers"],
-            "risks": ["High competition"],
+            "constraints": ["Budget"],
             "timeline": "Q3",
-            "opportunity_explorer": ["Expand feature set"],
+            "target_users": ["designers"],
+            "documents": ["Discovery Doc"],
+            "opportunity_areas": ["Expand feature set"],
             "suggested_reads": ["Add foundational research or industry reports to guide the team."],
             "ideas_board": ["Capture brainstorm ideas and potential experiments here."],
-            "documents": ["Discovery Doc"],
+            "success_metrics": ["increase adoption"],
         },
         "follow_up_questions": ["What is the timeline?"],
         "thread_id": "thread-123",
@@ -100,4 +100,3 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
     assert stored_docs[0]["conversation"][0]["content"].startswith("Launch a new app")
 
     app.dependency_overrides.clear()
-

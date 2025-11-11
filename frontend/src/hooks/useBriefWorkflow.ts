@@ -1,0 +1,64 @@
+import { useMutation } from '@tanstack/react-query'
+import { useState } from 'react'
+import { apiConfig } from '../config/api'
+import type {
+  BriefPayload,
+  BriefRunRequest,
+  ConversationTurn,
+  DocumentReference,
+} from '../types/brief'
+
+const ENDPOINT = `${apiConfig.baseUrl}/briefs/run`
+
+export function useBriefWorkflow() {
+  const [conversation, setConversation] = useState<ConversationTurn[]>([])
+  const [documents, setDocuments] = useState<DocumentReference[]>([])
+
+  const mutation = useMutation<BriefPayload, Error, BriefRunRequest>({
+    mutationFn: async (payload) => {
+      const requestBody: BriefRunRequest = {
+        conversation: payload.conversation ?? conversation,
+        documents: payload.documents ?? documents,
+        prompt: payload.prompt,
+        thread_id: payload.thread_id,
+      }
+
+      const response = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Workflow request failed: ${response.status}`)
+      }
+      return (await response.json()) as BriefPayload
+    },
+  })
+
+  const appendMessage = (turn: ConversationTurn) => {
+    setConversation((prev) => [...prev, turn])
+  }
+
+  const addDocument = (doc: DocumentReference) => {
+    setDocuments((prev) => [...prev, doc])
+  }
+
+  const reset = () => {
+    setConversation([])
+    setDocuments([])
+    mutation.reset()
+  }
+
+  return {
+    conversation,
+    documents,
+    addDocument,
+    appendMessage,
+    runWorkflow: mutation.mutate,
+    isLoading: mutation.isPending,
+    data: mutation.data,
+    error: mutation.error,
+    reset,
+  }
+}

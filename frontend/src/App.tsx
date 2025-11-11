@@ -1,29 +1,80 @@
 import './App.css'
-import { apiConfig } from './config/api'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ChatComposer } from './components/ChatComposer'
+import { ConversationHistory } from './components/ConversationHistory'
+import { BriefPreview } from './components/BriefPreview'
+import { UploadsPlaceholder } from './components/UploadsPlaceholder'
+import { useBriefWorkflow } from './hooks/useBriefWorkflow'
+import type { ConversationTurn } from './types/brief'
+
+const queryClient = new QueryClient()
+
+function AppContent() {
+  const {
+    conversation,
+    documents,
+    addDocument,
+    appendMessage,
+    runWorkflow,
+    isLoading,
+    data,
+    error,
+    reset,
+  } = useBriefWorkflow()
+
+  const handleSend = (turn: ConversationTurn) => {
+    const nextConversation = [...conversation, turn]
+    appendMessage(turn)
+    runWorkflow({ conversation: nextConversation })
+  }
+
+  const handleReset = () => {
+    reset()
+  }
+
+  return (
+    <main className="app-shell">
+      <header className="app-header">
+        <div>
+          <h1>Project Brief Agents</h1>
+          <p>Capture project context and generate a Lovable-style brief.</p>
+        </div>
+        <button type="button" onClick={handleReset} disabled={isLoading}>
+          Reset session
+        </button>
+      </header>
+
+      <section className="layout">
+        <div className="panel">
+          <ConversationHistory conversation={conversation} />
+          <UploadsPlaceholder
+            documents={documents}
+            onAdd={addDocument}
+          />
+          <ChatComposer onSend={handleSend} disabled={isLoading} />
+          {error && <p className="error">{error.message}</p>}
+          {isLoading && <p className="loading">Generating brief...</p>}
+        </div>
+
+        <div className="panel">
+          {data ? (
+            <BriefPreview payload={data} />
+          ) : (
+            <div className="placeholder">
+              Submit project details to generate a structured brief.
+            </div>
+          )}
+        </div>
+      </section>
+    </main>
+  )
+}
 
 function App() {
   return (
-    <main className="app-shell">
-      <section className="intro">
-        <h1>Project Brief Agents</h1>
-        <p>
-          This placeholder UI will be replaced by the dedicated frontend team. Until then,
-          it demonstrates where the conversational intake and brief preview experiences
-          will live.
-        </p>
-      </section>
-
-      <section className="status">
-        <h2>API Target</h2>
-        <p>
-          Requests will be routed to <code>{apiConfig.baseUrl}</code>.
-        </p>
-        <p>
-          Ensure the backend service is reachable and update <code>VITE_API_BASE_URL</code>{' '}
-          in <code>.env</code> as needed.
-        </p>
-      </section>
-    </main>
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
   )
 }
 

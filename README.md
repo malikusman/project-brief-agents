@@ -15,7 +15,7 @@ It bundles three services plus infrastructure for local Docker development.
         │                     MongoDB (memory & transcripts) ◄──────────┘
 ```
 
-- **Frontend (`frontend/`)** – Vite + React shell that will eventually host the conversational intake flow and brief viewer.
+- **Frontend (`frontend/`)** – Vite + React application with a conversational intake UI, document upload placeholder, and Lovable-style brief viewer powered by TanStack Query.
 - **Backend (`backend/`)** – FastAPI app that will orchestrate sessions, persist data, and broker calls to the agents service.
 - **Agents (`agents/`)** – LangChain + LangGraph workflow containing Agent #1 (intake) and Agent #2 (brief generator) with Mongo-backed memory.
 - **Infrastructure (`infrastructure/`)** – Dockerfiles and `docker-compose.yml` wiring the above with a MongoDB container and shared uploads volume.
@@ -89,10 +89,18 @@ npm install
 npm run dev
 ```
 
+Requests default to `http://localhost:8000/api/briefs/run`. Adjust `VITE_API_BASE_URL` in `.env` if the backend runs elsewhere.
+
 Vitest suite:
 
 ```bash
 npm run test -- --run
+```
+
+Build output:
+
+```bash
+npm run build
 ```
 
 ## Docker / Docker Compose
@@ -126,8 +134,9 @@ docker compose down
 
 - ✅ Service scaffolding for backend, agents, and frontend
 - ✅ Dockerized stack with Mongo persistence
-- ⏳ Backend ↔ agents integration endpoints
-- ⏳ Conversational intake flow + Lovable brief rendering
-- ⏳ Expanded documentation & ADRs (starting here)
+- ✅ Backend ↔ agents integration endpoints (`/api/briefs/run`)
+- ✅ Conversational intake flow + Lovable brief rendering
+- ✅ Frontend chat + brief viewer experience
+- ⏳ End-to-end validation & additional ADRs
 
 Open the Trello card “Agents for Project Brief Creation” for ongoing product requirements and template references.

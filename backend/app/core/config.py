@@ -32,6 +32,13 @@ class Settings(BaseSettings):
         default_factory=lambda: ["*"], alias="BACKEND_CORS_ALLOWED_ORIGINS"
     )
 
+    agents_base_url: str = Field(
+        default="http://agents:8080", alias="AGENTS_BASE_URL"
+    )
+    agents_timeout_seconds: int = Field(
+        default=60, alias="AGENTS_TIMEOUT_SECONDS"
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

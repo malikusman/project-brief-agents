@@ -14,7 +14,13 @@ def test_live_health() -> None:
 
 
 def test_workflow_endpoint_returns_summary() -> None:
-    payload = {"prompt": "Build a productivity tool for designers."}
+    payload = {
+        "conversation": [
+            {"role": "user", "content": "Build a productivity tool for designers."},
+            {"role": "user", "content": "We want desktop and mobile support."},
+        ],
+        "documents": [{"id": "1", "name": "Design brief"}],
+    }
     response = client.post("/workflow/run", json=payload)
     assert response.status_code == 200
     data = response.json()

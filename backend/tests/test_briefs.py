@@ -1,6 +1,5 @@
 """Tests for brief generation endpoint."""
 
-from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -14,8 +13,9 @@ class StubAgentsClient(AgentsClient):
     def __init__(self, response: dict) -> None:
         self._response = response
 
-    async def run_workflow(self, prompt: str) -> dict:
-        self.last_prompt = prompt  # type: ignore[attr-defined]
+    async def run_workflow(self, conversation, documents=None, thread_id=None) -> dict:
+        self.last_conversation = list(conversation)  # type: ignore[attr-defined]
+        self.last_documents = list(documents or [])  # type: ignore[attr-defined]
         return self._response
 
 
@@ -43,6 +43,8 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
     response_payload = {
         "summary": {"project_title": "Test Project"},
         "brief": {"project_description": "Details"},
+        "follow_up_questions": ["What is the timeline?"],
+        "thread_id": "thread-123",
     }
     agents_stub = StubAgentsClient(response=response_payload)
     db_stub = StubDatabase()
@@ -57,16 +59,22 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
     app.dependency_overrides[get_database] = override_db
 
     client = TestClient(app)
-    resp = client.post("/api/briefs/run", json={"prompt": "Launch a new app"})
+    payload = {
+        "prompt": "Launch a new app for remote teams to stay organized.",
+        "documents": [{"id": "1", "name": "Discovery Doc"}],
+    }
+    resp = client.post("/api/briefs/run", json=payload)
 
     assert resp.status_code == 200
     data = resp.json()
     assert data["summary"] == response_payload["summary"]
     assert data["brief"] == response_payload["brief"]
+    assert data["follow_up_questions"] == response_payload["follow_up_questions"]
+    assert data["thread_id"] == response_payload["thread_id"]
     assert "run_id" in data
 
     stored_docs = db_stub["brief_runs"].documents
-    assert stored_docs[0]["prompt"] == "Launch a new app"
+    assert stored_docs[0]["conversation"][0]["content"].startswith("Launch a new app")
 
     app.dependency_overrides.clear()
 

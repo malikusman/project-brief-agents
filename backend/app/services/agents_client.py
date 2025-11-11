@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 import httpx
 
@@ -16,7 +16,12 @@ class AgentsClient:
         self._base_url = base_url
         self._timeout_seconds = timeout_seconds
 
-    async def run_workflow(self, prompt: str) -> dict[str, Any]:
+    async def run_workflow(
+        self,
+        conversation: Iterable[Mapping[str, str]],
+        documents: Iterable[Mapping[str, str | None]] | None = None,
+        thread_id: str | None = None,
+    ) -> dict[str, Any]:
         """Invoke the workflow run endpoint."""
 
         async with httpx.AsyncClient(
@@ -25,7 +30,11 @@ class AgentsClient:
         ) as client:
             response = await client.post(
                 "/workflow/run",
-                json={"prompt": prompt},
+                json={
+                    "conversation": list(conversation),
+                    "documents": list(documents or []),
+                    "thread_id": thread_id,
+                },
             )
             response.raise_for_status()
             return response.json()

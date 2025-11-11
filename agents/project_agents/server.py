@@ -1,15 +1,35 @@
 """FastAPI service exposing LangGraph workflow endpoints."""
 
+from typing import Literal, Optional
+
 from fastapi import FastAPI, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from project_agents.service import run_project_brief_workflow
+
+
+class ConversationTurn(BaseModel):
+    """Single message exchanged during the intake conversation."""
+
+    role: Literal["user", "assistant", "system"] = "user"
+    content: str = Field(..., min_length=1)
+
+
+class DocumentReference(BaseModel):
+    """Metadata describing a document shared during intake."""
+
+    id: str = Field(..., min_length=1)
+    name: str = Field(..., min_length=1)
+    url: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class WorkflowRequest(BaseModel):
     """Payload for executing the project brief workflow."""
 
-    prompt: str
+    conversation: list[ConversationTurn] = Field(..., min_length=1)
+    documents: list[DocumentReference] = Field(default_factory=list)
+    thread_id: Optional[str] = None
 
 
 class WorkflowResponse(BaseModel):
@@ -17,6 +37,8 @@ class WorkflowResponse(BaseModel):
 
     summary: dict[str, object]
     brief: dict[str, object]
+    follow_up_questions: list[str]
+    thread_id: str
 
 
 app = FastAPI(title="Project Brief Agents Service")
@@ -37,10 +59,15 @@ async def live() -> dict[str, str]:
 async def run_workflow(payload: WorkflowRequest) -> WorkflowResponse:
     """Execute the LangGraph workflow and return structured results."""
 
-    state = run_project_brief_workflow(payload.prompt)
+    state = run_project_brief_workflow(
+        conversation=[turn.model_dump() for turn in payload.conversation],
+        documents=[doc.model_dump() for doc in payload.documents],
+        thread_id=payload.thread_id,
+    )
     return WorkflowResponse(
         summary=state.get("summary", {}),
         brief=state.get("brief", {}),
+        follow_up_questions=state.get("follow_up_questions", []),
+        thread_id=state["thread_id"],
     )
-
 

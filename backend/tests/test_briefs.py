@@ -41,8 +41,31 @@ class StubDatabase(dict):
 
 def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
     response_payload = {
-        "summary": {"project_title": "Test Project"},
-        "brief": {"project_description": "Details"},
+        "summary": {
+            "project_title": "Test Project",
+            "target_users": ["designers"],
+            "success_metrics": ["increase adoption"],
+            "constraints": [],
+            "timeline": "Q3",
+            "resources": ["Product roadmap"],
+            "documents": ["Discovery Doc"],
+            "opportunities": ["Deliver the solution: Build the best app"],
+        },
+        "brief": {
+            "project_title": "Test Project",
+            "project_description": "Details",
+            "purpose": "Help teams stay productive.",
+            "expected_outcomes": ["increase adoption"],
+            "business_model": ["Subscription model"],
+            "success_metrics": ["increase adoption"],
+            "target_users": ["designers"],
+            "risks": ["High competition"],
+            "timeline": "Q3",
+            "opportunity_explorer": ["Expand feature set"],
+            "suggested_reads": ["Add foundational research or industry reports to guide the team."],
+            "ideas_board": ["Capture brainstorm ideas and potential experiments here."],
+            "documents": ["Discovery Doc"],
+        },
         "follow_up_questions": ["What is the timeline?"],
         "thread_id": "thread-123",
     }
@@ -67,8 +90,8 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["summary"] == response_payload["summary"]
-    assert data["brief"] == response_payload["brief"]
+    assert data["summary"]["project_title"] == "Test Project"
+    assert data["brief"]["project_description"] == "Details"
     assert data["follow_up_questions"] == response_payload["follow_up_questions"]
     assert data["thread_id"] == response_payload["thread_id"]
     assert "run_id" in data

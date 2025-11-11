@@ -9,6 +9,7 @@ from project_agents.graphs.state import (
     initialize_state,
 )
 from project_agents.graphs.workflow import build_project_brief_graph
+from project_agents.models import AgentRunModel, BriefModel, SummaryModel
 
 
 def run_project_brief_workflow(
@@ -45,7 +46,16 @@ def run_project_brief_workflow(
     project_state = cast(ProjectState, result)
     project_state["thread_id"] = thread_identifier
     project_state.setdefault("follow_up_questions", [])
-    return project_state
+
+    summary_model = SummaryModel(**project_state.get("summary", {}))
+    brief_model = BriefModel(**project_state.get("brief", {}))
+    agent_model = AgentRunModel(
+        summary=summary_model,
+        brief=brief_model,
+        follow_up_questions=project_state.get("follow_up_questions", []),
+        thread_id=thread_identifier,
+    )
+    return cast(ProjectState, agent_model.model_dump())
 
 
 def generate_thread_id() -> str:

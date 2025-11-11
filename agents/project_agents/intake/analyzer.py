@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
+from project_agents.models import SummaryModel
+
 
 SUMMARY_FIELDS = {
     "project_title": "What is the working title or name of the project?",
@@ -75,7 +77,7 @@ def _extract_title(prompt: str) -> str | None:
     return None
 
 
-def analyze_prompt(prompt: str, documents: list[str] | None = None) -> Tuple[dict, list[str]]:
+def analyze_prompt(prompt: str, documents: list[str] | None = None) -> Tuple[SummaryModel, list[str]]:
     """Parse the prompt into a structured summary and collect follow-up questions."""
 
     documents = documents or []
@@ -91,12 +93,27 @@ def analyze_prompt(prompt: str, documents: list[str] | None = None) -> Tuple[dic
         summary.resources = summary.resources or ", ".join(documents)
         summary.documents.extend(documents)
 
+    raw_summary = summary.to_dict()
+    summary_model = SummaryModel(
+        project_title=raw_summary.get("project_title") or "Untitled Project",
+        problem=raw_summary.get("problem"),
+        solution=raw_summary.get("solution"),
+        target_users=_normalize_list(raw_summary.get("target_users")),
+        success_metrics=_normalize_list(raw_summary.get("success_metrics")),
+        constraints=_normalize_list(raw_summary.get("constraints")),
+        timeline=raw_summary.get("timeline"),
+        resources=_normalize_list(raw_summary.get("resources")),
+        documents=raw_summary.get("documents", []),
+    )
+    summary_model.opportunities = summary_model.opportunities or _derive_opportunities(summary_model)
+
     missing = [
-        SUMMARY_FIELDS[field] for field, value in summary.to_dict().items()
-        if field in SUMMARY_FIELDS and (value is None or not value.strip())
+        SUMMARY_FIELDS[field]
+        for field, value in raw_summary.items()
+        if field in SUMMARY_FIELDS and (value is None or not str(value).strip())
     ]
 
-    return summary.to_dict(), missing
+    return summary_model, missing
 
 
 def _first_sentence_with_keyword(sentences: list[str], keywords: list[str]) -> str | None:
@@ -105,4 +122,34 @@ def _first_sentence_with_keyword(sentences: list[str], keywords: list[str]) -> s
         if any(keyword in lowered for keyword in keywords):
             return sentence.strip()
     return None
+
+
+def _normalize_list(value: str | list[str] | None) -> list[str]:
+    if not value:
+        return []
+    if isinstance(value, list):
+        return [item for item in value if item]
+    return [item for item in _split_str(value)]
+
+
+def _split_str(value: str) -> list[str]:
+    separators = [";", ",", "\n", " and "]
+    items = [value]
+    for sep in separators:
+        new_items: list[str] = []
+        for item in items:
+            new_items.extend(item.split(sep))
+        items = new_items
+    return [item.strip(" -•").strip() for item in items if item.strip()]
+
+
+def _derive_opportunities(summary: SummaryModel) -> list[str]:
+    hints: list[str] = []
+    if summary.solution:
+        hints.append(f"Deliver the solution: {summary.solution}")
+    if summary.problem:
+        hints.append(f"Address the problem: {summary.problem}")
+    if summary.target_users:
+        hints.append(f"Delight {', '.join(summary.target_users)}")
+    return hints
 

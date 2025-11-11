@@ -1,31 +1,16 @@
 """Routes for coordinating project brief generation."""
 
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Any
 
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field, model_validator
 
 from app.dependencies.mongo import get_database
+from app.models import AgentRunModel, BriefModel, ConversationTurn, DocumentReference, SummaryModel
 from app.services.agents_client import AgentsClient, get_agents_client
 
 router = APIRouter()
-
-
-class ConversationTurn(BaseModel):
-    """Represents a single conversational message."""
-
-    role: Literal["user", "assistant", "system"] = "user"
-    content: str = Field(..., min_length=1)
-
-
-class DocumentReference(BaseModel):
-    """Metadata about a document shared during intake."""
-
-    id: str = Field(default_factory=str)
-    name: str = Field(..., min_length=1)
-    url: str | None = None
-    notes: str | None = None
 
 
 class BriefRequest(BaseModel):
@@ -44,8 +29,6 @@ class BriefRequest(BaseModel):
     def ensure_conversation(self) -> "BriefRequest":
         if not self.conversation and not self.prompt:
             raise ValueError("Either prompt or conversation must be provided.")
-        if self.conversation and self.prompt:
-            return self
         if self.prompt and not self.conversation:
             self.conversation = [ConversationTurn(role="user", content=self.prompt)]
         return self
@@ -54,8 +37,8 @@ class BriefRequest(BaseModel):
 class BriefResponse(BaseModel):
     """Structured brief response returned to clients."""
 
-    summary: dict[str, Any]
-    brief: dict[str, Any]
+    summary: SummaryModel
+    brief: BriefModel
     follow_up_questions: list[str]
     thread_id: str
     run_id: str
@@ -82,23 +65,24 @@ async def run_brief_generation(
         thread_id=payload.thread_id,
     )
 
+    agent_model = AgentRunModel.model_validate(workflow_output)
     document = {
         "conversation": conversation_payload,
         "documents": document_payload,
-        "summary": workflow_output.get("summary", {}),
-        "brief": workflow_output.get("brief", {}),
-        "follow_up_questions": workflow_output.get("follow_up_questions", []),
-        "thread_id": workflow_output.get("thread_id"),
+        "summary": agent_model.summary.model_dump(),
+        "brief": agent_model.brief.model_dump(),
+        "follow_up_questions": agent_model.follow_up_questions,
+        "thread_id": agent_model.thread_id,
         "created_at": datetime.now(timezone.utc),
     }
 
     result = await database["brief_runs"].insert_one(document)
 
     return BriefResponse(
-        summary=document["summary"],
-        brief=document["brief"],
-        follow_up_questions=document["follow_up_questions"],
-        thread_id=document["thread_id"],
+        summary=agent_model.summary,
+        brief=agent_model.brief,
+        follow_up_questions=agent_model.follow_up_questions,
+        thread_id=agent_model.thread_id,
         run_id=str(result.inserted_id),
     )
 

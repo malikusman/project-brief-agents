@@ -16,9 +16,13 @@ def test_workflow_returns_summary_and_brief() -> None:
 
     result = run_project_brief_workflow(conversation, documents=documents)
 
-    assert "summary" in result
-    assert "brief" in result
-    assert result["summary"]["project_title"]
+    summary = result["summary"]
+    brief = result["brief"]
+
+    assert summary["project_title"]
+    assert isinstance(summary["target_users"], list)
     assert isinstance(result["follow_up_questions"], list)
-    assert isinstance(result["brief"]["expected_outcomes"], list)
+    assert isinstance(brief["expected_outcomes"], list)
+    assert "project_description" in brief
+
 

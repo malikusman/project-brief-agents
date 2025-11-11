@@ -24,6 +24,7 @@ def test_workflow_endpoint_returns_summary() -> None:
     response = client.post("/workflow/run", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert "summary" in data
-    assert "brief" in data
+    assert data["summary"]["project_title"]
+    assert data["brief"]["project_description"]
+    assert isinstance(data["brief"]["expected_outcomes"], list)
 

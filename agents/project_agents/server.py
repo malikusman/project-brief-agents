@@ -5,6 +5,7 @@ from typing import Literal, Optional
 from fastapi import FastAPI, status
 from pydantic import BaseModel, Field
 
+from project_agents.models import AgentRunModel, BriefModel, SummaryModel
 from project_agents.service import run_project_brief_workflow
 
 
@@ -35,8 +36,8 @@ class WorkflowRequest(BaseModel):
 class WorkflowResponse(BaseModel):
     """Structured response returning generated summary and brief."""
 
-    summary: dict[str, object]
-    brief: dict[str, object]
+    summary: SummaryModel
+    brief: BriefModel
     follow_up_questions: list[str]
     thread_id: str
 
@@ -65,8 +66,8 @@ async def run_workflow(payload: WorkflowRequest) -> WorkflowResponse:
         thread_id=payload.thread_id,
     )
     return WorkflowResponse(
-        summary=state.get("summary", {}),
-        brief=state.get("brief", {}),
+        summary=SummaryModel(**state["summary"]),
+        brief=BriefModel(**state["brief"]),
         follow_up_questions=state.get("follow_up_questions", []),
         thread_id=state["thread_id"],
     )

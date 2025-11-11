@@ -11,6 +11,7 @@ from langchain_core.runnables import RunnableLambda
 from project_agents.brief.formatter import build_brief
 from project_agents.graphs.state import DocumentReference, ProjectState
 from project_agents.intake.analyzer import analyze_prompt
+from project_agents.models import SummaryModel
 
 
 def build_intake_node() -> RunnableLambda:
@@ -27,7 +28,7 @@ def build_intake_node() -> RunnableLambda:
         prompt_text = "\n".join(user_messages)
         document_names = [doc.get("name", "") for doc in documents]
 
-        summary, follow_ups = analyze_prompt(prompt_text, document_names)
+        summary_model, follow_ups = analyze_prompt(prompt_text, document_names)
 
         summary_message = AIMessage(
             content="Intake summary prepared with "
@@ -39,7 +40,7 @@ def build_intake_node() -> RunnableLambda:
             "messages": state.get("messages", []) + [summary_message],
             "conversation": conversation,
             "documents": documents,
-            "summary": summary,
+            "summary": summary_model.model_dump(),
             "follow_up_questions": follow_ups,
         }
 
@@ -50,12 +51,13 @@ def build_brief_node() -> RunnableLambda:
     """Return a runnable that structures the Lovable-style brief."""
 
     def _run(state: ProjectState) -> ProjectState:
-        summary = state.get("summary", {})
-        brief = build_brief(summary)
+        summary_dict = state.get("summary", {})
+        summary_model = SummaryModel(**summary_dict)
+        brief = build_brief(summary_model)
         message = AIMessage(content="Project brief structured.", name="brief_agent")
         return {
             "messages": state.get("messages", []) + [message],
-            "brief": brief,
+            "brief": brief.model_dump(),
         }
 
     return RunnableLambda(_run)

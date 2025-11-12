@@ -13,6 +13,7 @@ const ENDPOINT = `${apiConfig.baseUrl}/briefs/run`
 export function useBriefWorkflow() {
   const [conversation, setConversation] = useState<ConversationTurn[]>([])
   const [documents, setDocuments] = useState<DocumentReference[]>([])
+  const [threadId, setThreadId] = useState<string | undefined>(undefined)
 
   const mutation = useMutation<BriefPayload, Error, BriefRunRequest>({
     mutationFn: async (payload) => {
@@ -20,7 +21,7 @@ export function useBriefWorkflow() {
         conversation: payload.conversation ?? conversation,
         documents: payload.documents ?? documents,
         prompt: payload.prompt,
-        thread_id: payload.thread_id,
+        thread_id: payload.thread_id ?? threadId,
       }
 
       const response = await fetch(ENDPOINT, {
@@ -33,6 +34,27 @@ export function useBriefWorkflow() {
         throw new Error(`Workflow request failed: ${response.status}`)
       }
       return (await response.json()) as BriefPayload
+    },
+    onSuccess: (data) => {
+      setThreadId(data.thread_id)
+      if (data.follow_up_questions.length) {
+        const message = `I still need a bit more detail:\n${data.follow_up_questions
+          .map((item, index) => `${index + 1}. ${item}`)
+          .join('\n')}`
+        setConversation((prev) => [
+          ...prev,
+          { role: 'assistant', content: message },
+        ])
+      } else {
+        setConversation((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content:
+              'Wonderful! I have enough context to keep refining the brief. Feel free to iterate further or request changes.',
+          },
+        ])
+      }
     },
   })
 
@@ -47,6 +69,7 @@ export function useBriefWorkflow() {
   const reset = () => {
     setConversation([])
     setDocuments([])
+    setThreadId(undefined)
     mutation.reset()
   }
 
@@ -60,5 +83,6 @@ export function useBriefWorkflow() {
     data: mutation.data,
     error: mutation.error,
     reset,
+    threadId,
   }
 }

@@ -58,7 +58,19 @@ async def run_brief_generation(
     """Trigger the agents workflow, persist the result, and return the structured brief."""
 
     conversation_payload = [turn.model_dump() for turn in payload.conversation or []]
-    document_payload = [doc.model_dump() for doc in payload.documents]
+    document_payload = []
+    for doc in payload.documents:
+        doc_data = doc.model_dump()
+        text = doc_data.get("text")
+        doc_id = doc_data.get("id")
+        if doc_id:
+            stored = await database["documents"].find_one({"id": doc_id})
+            if stored:
+                text = stored.get("text")
+                doc_data.setdefault("name", stored.get("name"))
+        if text:
+            doc_data["text"] = text
+        document_payload.append(doc_data)
 
     workflow_output = await agents_client.run_workflow(
         conversation=conversation_payload,

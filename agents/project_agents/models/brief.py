@@ -63,3 +63,11 @@ class IntakeInsights(BaseModel):
 
     captured_fields: List[str] = Field(default_factory=list)
     missing_fields: List[str] = Field(default_factory=list)
+
+
+class DocumentReference(BaseModel):
+    id: str
+    name: str
+    url: Optional[str] = None
+    notes: Optional[str] = None
+    text: Optional[str] = None

@@ -31,6 +31,13 @@ class StubCollection:
 
         return Result()
 
+    async def find_one(self, query: dict) -> dict | None:
+        for document in self.documents:
+            match = all(document.get(key) == value for key, value in query.items())
+            if match:
+                return document
+        return None
+
 
 class StubDatabase(dict):
     def __getitem__(self, item: str) -> StubCollection:
@@ -83,6 +90,7 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
     app.dependency_overrides[get_database] = override_db
 
     client = TestClient(app)
+    db_stub["documents"].documents.append({"id": "1", "name": "Discovery Doc", "text": "Remote teams notes"})
     payload = {
         "prompt": "Launch a new app for remote teams to stay organized.",
         "documents": [{"id": "1", "name": "Discovery Doc"}],

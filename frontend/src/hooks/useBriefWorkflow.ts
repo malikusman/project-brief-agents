@@ -54,6 +54,22 @@ export function useBriefWorkflow() {
     setDocuments((prev) => [...prev, doc])
   }
 
+  const uploadDocument = async (file: File): Promise<void> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await fetch(`${apiConfig.baseUrl}/uploads`, {
+      method: 'POST',
+      body: formData,
+    })
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status}`)
+    }
+    const json = await response.json()
+    const document = json.document as { id: string; name: string }
+    const reference: DocumentReference = { id: document.id, name: document.name }
+    addDocument(reference)
+  }
+
   const reset = () => {
     setConversation([])
     setDocuments([])
@@ -64,8 +80,8 @@ export function useBriefWorkflow() {
   return {
     conversation,
     documents,
-    addDocument,
     appendMessage,
+    uploadDocument,
     runWorkflow: mutation.mutate,
     isLoading: mutation.isPending,
     data: mutation.data,

@@ -15,9 +15,9 @@ It bundles three services plus infrastructure for local Docker development.
         │                     MongoDB (memory & transcripts) ◄──────────┘
 ```
 
-- **Frontend (`frontend/`)** – Vite + React application with a conversational intake UI, document upload placeholder, and Lovable-style brief viewer powered by TanStack Query.
-- **Backend (`backend/`)** – FastAPI app that will orchestrate sessions, persist data, and broker calls to the agents service.
-- **Agents (`agents/`)** – LangChain + LangGraph workflow containing Agent #1 (intake) and Agent #2 (brief generator) with Mongo-backed memory.
+- **Frontend (`frontend/`)** – Vite + React application with a conversational intake UI, real document uploads, and a Lovable-style brief viewer powered by TanStack Query.
+- **Backend (`backend/`)** – FastAPI app that stores uploads on disk, parses them with LangChain community loaders, persists data, and brokers calls to the agents service.
+- **Agents (`agents/`)** – LangChain + LangGraph workflow containing Agent #1 (intake) and Agent #2 (brief generator) with Mongo-backed memory and conversational follow-up tone control.
 - **Infrastructure (`infrastructure/`)** – Dockerfiles and `docker-compose.yml` wiring the above with a MongoDB container and shared uploads volume.
 
 ## Repository Layout
@@ -89,7 +89,7 @@ npm install
 npm run dev
 ```
 
-Requests default to `http://localhost:8000/api/briefs/run`. Adjust `VITE_API_BASE_URL` in `.env` if the backend runs elsewhere.
+Requests default to `http://localhost:8000/api`. Adjust `VITE_API_BASE_URL` in `.env` if the backend runs elsewhere.
 
 Vitest suite:
 
@@ -137,6 +137,8 @@ docker compose down
 - ✅ Backend ↔ agents integration endpoints (`/api/briefs/run`)
 - ✅ Conversational intake flow + Lovable brief rendering
 - ✅ Frontend chat + brief viewer experience
+- ✅ Document ingestion pipeline (upload → parse → feed to agents)
+- ✅ Tone-aware assistant follow-ups with OpenAI prompt and rule-based fallback
 - ⏳ End-to-end validation & additional ADRs
 
 Open the Trello card “Agents for Project Brief Creation” for ongoing product requirements and template references.

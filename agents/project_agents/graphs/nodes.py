@@ -23,8 +23,10 @@ def build_intake_node() -> RunnableLambda:
             for turn in conversation
             if turn.get("role", "user").lower() == "user"
         ]
-        prompt_text = "\n".join(user_messages)
-        document_names = [doc.get("name", "") for doc in documents]
+        document_texts = [doc.get("text", "") for doc in documents if doc.get("text")]
+        prompt_segments = user_messages + document_texts
+        prompt_text = "\n".join(segment for segment in prompt_segments if segment)
+        document_names = [doc.get("name", "") or doc.get("id", "") for doc in documents]
 
         summary_payload, follow_ups, insights = analyze_prompt(prompt_text, document_names)
         assistant_text = generate_follow_up_message(summary_payload, follow_ups, insights)

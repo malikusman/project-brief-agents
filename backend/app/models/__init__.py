@@ -7,6 +7,7 @@ from .brief import (
     DocumentReference,
     SummaryModel,
 )
+from .document import DocumentCreateResponse, DocumentModel
 
 __all__ = [
     "AgentRunModel",
@@ -14,4 +15,6 @@ __all__ = [
     "ConversationTurn",
     "DocumentReference",
     "SummaryModel",
+    "DocumentModel",
+    "DocumentCreateResponse",
 ]

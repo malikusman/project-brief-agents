@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 from typing import Iterable
 
 from openai import OpenAI
@@ -13,12 +14,16 @@ _FALLBACK_ACKS = [
     "Great, I captured {captured}.",
     "Thanks! I now know {captured}.",
     "Appreciate the detail on {captured}.",
+    "Nice—that gives me a good handle on {captured}.",
+    "Love it. I've logged {captured}.",
 ]
 
 _FALLBACK_PROMPTS = [
     "Could you help me with {missing}?",
     "Next, I'd love to understand {missing}.",
     "When you have a moment, tell me about {missing}.",
+    "To keep shaping the brief, could you walk me through {missing}?",
+    "What can you share about {missing}?",
 ]
 
 
@@ -37,15 +42,15 @@ def _fallback_message(insights: IntakeInsights) -> str:
 
     parts: list[str] = []
     if captured:
-        template = _FALLBACK_ACKS[len(captured) % len(_FALLBACK_ACKS)]
+        template = random.choice(_FALLBACK_ACKS)
         parts.append(template.format(captured=captured))
     if missing:
-        template = _FALLBACK_PROMPTS[len(missing) % len(_FALLBACK_PROMPTS)]
+        template = random.choice(_FALLBACK_PROMPTS)
         parts.append(template.format(missing=missing))
     else:
         parts.append("You're all set for now—feel free to keep refining the brief or ask for adjustments.")
 
-    return " " .join(parts)
+    return " ".join(parts)
 
 
 def generate_follow_up_message(

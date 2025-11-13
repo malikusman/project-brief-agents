@@ -12,6 +12,7 @@ class DocumentReference(BaseModel):
     name: str = Field(..., min_length=1)
     url: str | None = None
     notes: str | None = None
+    text: str | None = None
 
 
 class SummaryModel(BaseModel):

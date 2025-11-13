@@ -13,7 +13,7 @@ function AppContent() {
   const {
     conversation,
     documents,
-    addDocument,
+    uploadDocument,
     appendMessage,
     runWorkflow,
     isLoading,
@@ -49,7 +49,7 @@ function AppContent() {
           <ConversationHistory conversation={conversation} />
           <UploadsPlaceholder
             documents={documents}
-            onAdd={addDocument}
+            onUpload={uploadDocument}
           />
           <ChatComposer onSend={handleSend} disabled={isLoading} />
           {error && <p className="error">{error.message}</p>}

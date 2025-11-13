@@ -32,6 +32,7 @@ export interface BriefPayload {
   brief: LovableBrief
   follow_up_questions: string[]
   thread_id: string
+  assistant_message: string
 }
 
 export interface ConversationTurn {

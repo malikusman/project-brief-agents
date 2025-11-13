@@ -47,12 +47,14 @@ def run_project_brief_workflow(
     summary_payload = SummaryPayload(**result.get("summary", {}))
     brief_payload = LovableBrief(**result.get("brief", {}))
     follow_ups = result.get("follow_up_questions", [])
+    assistant_message = result.get("assistant_message") or ""
 
     agent_payload = BriefPayload(
         summary=summary_payload,
         brief=brief_payload,
         follow_up_questions=follow_ups,
         thread_id=thread_identifier,
+        assistant_message=assistant_message,
     )
     return agent_payload.model_dump()
 

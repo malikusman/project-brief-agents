@@ -37,22 +37,10 @@ export function useBriefWorkflow() {
     },
     onSuccess: (data) => {
       setThreadId(data.thread_id)
-      if (data.follow_up_questions.length) {
-        const message = `I still need a bit more detail:\n${data.follow_up_questions
-          .map((item, index) => `${index + 1}. ${item}`)
-          .join('\n')}`
+      if (data.assistant_message) {
         setConversation((prev) => [
           ...prev,
-          { role: 'assistant', content: message },
-        ])
-      } else {
-        setConversation((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content:
-              'Wonderful! I have enough context to keep refining the brief. Feel free to iterate further or request changes.',
-          },
+          { role: 'assistant', content: data.assistant_message },
         ])
       }
     },

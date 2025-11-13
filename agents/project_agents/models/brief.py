@@ -55,3 +55,11 @@ class BriefPayload(BaseModel):
     brief: LovableBrief
     follow_up_questions: List[str]
     thread_id: str
+    assistant_message: str
+
+
+class IntakeInsights(BaseModel):
+    """Metadata about captured and missing summary fields."""
+
+    captured_fields: List[str] = Field(default_factory=list)
+    missing_fields: List[str] = Field(default_factory=list)

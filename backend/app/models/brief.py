@@ -48,6 +48,7 @@ class AgentRunModel(BaseModel):
     brief: BriefModel
     follow_up_questions: List[str]
     thread_id: str
+    assistant_message: str
 
 
 class ConversationTurn(BaseModel):

@@ -68,6 +68,7 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
         },
         "follow_up_questions": ["What is the timeline?"],
         "thread_id": "thread-123",
+        "assistant_message": "Thanks! I captured the target users and success metrics. Could you share the problem we are solving and the proposed solution?",
     }
     agents_stub = StubAgentsClient(response=response_payload)
     db_stub = StubDatabase()
@@ -92,11 +93,11 @@ def test_run_brief_generation_endpoint_returns_brief(monkeypatch):
     data = resp.json()
     assert data["summary"]["project_title"] == "Test Project"
     assert data["brief"]["project_description"] == "Details"
-    assert data["follow_up_questions"] == response_payload["follow_up_questions"]
+    assert data["assistant_message"] == response_payload["assistant_message"]
     assert data["thread_id"] == response_payload["thread_id"]
     assert "run_id" in data
 
     stored_docs = db_stub["brief_runs"].documents
-    assert stored_docs[0]["conversation"][0]["content"].startswith("Launch a new app")
+    assert stored_docs[0]["assistant_message"] == response_payload["assistant_message"]
 
     app.dependency_overrides.clear()

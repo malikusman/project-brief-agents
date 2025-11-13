@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnableLambda
 from project_agents.brief.formatter import build_brief
 from project_agents.graphs.state import ProjectState
 from project_agents.intake.analyzer import analyze_prompt
+from project_agents.intake.tone import generate_follow_up_message
 from project_agents.models import LovableBrief, SummaryPayload
 
 
@@ -25,13 +26,9 @@ def build_intake_node() -> RunnableLambda:
         prompt_text = "\n".join(user_messages)
         document_names = [doc.get("name", "") for doc in documents]
 
-        summary_payload, follow_ups = analyze_prompt(prompt_text, document_names)
-
-        summary_message = AIMessage(
-            content="Intake summary prepared with "
-            f"{len(follow_ups)} follow-up question(s).",
-            name="intake_agent",
-        )
+        summary_payload, follow_ups, insights = analyze_prompt(prompt_text, document_names)
+        assistant_text = generate_follow_up_message(summary_payload, follow_ups, insights)
+        summary_message = AIMessage(content=assistant_text, name="intake_agent")
 
         return {
             "messages": state.get("messages", []) + [summary_message],
@@ -39,6 +36,7 @@ def build_intake_node() -> RunnableLambda:
             "documents": documents,
             "summary": summary_payload.model_dump(),
             "follow_up_questions": follow_ups,
+            "assistant_message": assistant_text,
         }
 
     return RunnableLambda(_run)
@@ -55,6 +53,7 @@ def build_brief_node() -> RunnableLambda:
         return {
             "messages": state.get("messages", []) + [message],
             "brief": brief_payload.model_dump(),
+            "assistant_message": state.get("assistant_message", ""),
         }
 
     return RunnableLambda(_run)

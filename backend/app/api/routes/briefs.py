@@ -42,6 +42,7 @@ class BriefResponse(BaseModel):
     follow_up_questions: list[str]
     thread_id: str
     run_id: str
+    assistant_message: str
 
 
 @router.post(
@@ -73,6 +74,7 @@ async def run_brief_generation(
         "brief": agent_model.brief.model_dump(),
         "follow_up_questions": agent_model.follow_up_questions,
         "thread_id": agent_model.thread_id,
+        "assistant_message": agent_model.assistant_message,
         "created_at": datetime.now(timezone.utc),
     }
 
@@ -83,6 +85,7 @@ async def run_brief_generation(
         brief=agent_model.brief,
         follow_up_questions=agent_model.follow_up_questions,
         thread_id=agent_model.thread_id,
+        assistant_message=agent_model.assistant_message,
         run_id=str(result.inserted_id),
     )
 

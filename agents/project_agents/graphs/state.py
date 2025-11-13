@@ -32,6 +32,7 @@ class ProjectState(TypedDict, total=False):
     summary: dict[str, Any]
     brief: dict[str, Any]
     follow_up_questions: list[str]
+    assistant_message: str
 
 
 def initialize_state(

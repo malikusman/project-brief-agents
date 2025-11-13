@@ -40,6 +40,7 @@ class WorkflowResponse(BaseModel):
     brief: LovableBrief
     follow_up_questions: list[str]
     thread_id: str
+    assistant_message: str
 
 
 app = FastAPI(title="Project Brief Agents Service")
@@ -71,4 +72,5 @@ async def run_workflow(payload: WorkflowRequest) -> WorkflowResponse:
         brief=agent_payload.brief,
         follow_up_questions=agent_payload.follow_up_questions,
         thread_id=agent_payload.thread_id,
+        assistant_message=agent_payload.assistant_message,
     )

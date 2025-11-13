@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Tuple
 
-from project_agents.models import SummaryPayload
+from project_agents.models import IntakeInsights, SummaryPayload
 
 
 SUMMARY_FIELDS = {
@@ -32,7 +32,7 @@ KEYWORD_MAP = {
 def analyze_prompt(
     prompt: str,
     documents: list[str] | None = None,
-) -> Tuple[SummaryPayload, list[str]]:
+) -> Tuple[SummaryPayload, list[str], IntakeInsights]:
     """Parse the prompt into a structured summary and collect follow-up questions."""
 
     documents = documents or []
@@ -66,13 +66,22 @@ def analyze_prompt(
     if not summary.opportunity_areas:
         summary.opportunity_areas = _derive_opportunities(summary)
 
-    missing = [
-        SUMMARY_FIELDS[field]
-        for field in SUMMARY_FIELDS
-        if not getattr(summary, field)
-    ]
+    captured_fields: list[str] = []
+    missing: list[str] = []
 
-    return summary, missing
+    for field, question in SUMMARY_FIELDS.items():
+        value = getattr(summary, field)
+        if value:
+            captured_fields.append(field.replace("_", " "))
+        else:
+            missing.append(question)
+
+    insights = IntakeInsights(
+        captured_fields=captured_fields,
+        missing_fields=[question.replace("What ", "").replace("How ", "").replace("Are ", "").rstrip("?") for question in missing],
+    )
+
+    return summary, missing, insights
 
 
 def _sentences(text: str) -> list[str]:

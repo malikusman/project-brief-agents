@@ -35,6 +35,7 @@ def run_project_brief_workflow(
                     name=str(doc.get("name", "")),
                     url=doc.get("url"),
                     notes=doc.get("notes"),
+                    text=doc.get("text"),
                 )
             )
 

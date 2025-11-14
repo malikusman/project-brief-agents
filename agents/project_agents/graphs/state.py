@@ -21,6 +21,7 @@ class DocumentReference(TypedDict, total=False):
     name: str
     url: str | None
     notes: str | None
+    text: str | None
 
 
 class ProjectState(TypedDict, total=False):

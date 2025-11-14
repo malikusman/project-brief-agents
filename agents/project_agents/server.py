@@ -23,6 +23,7 @@ class DocumentReference(BaseModel):
     name: str = Field(..., min_length=1)
     url: Optional[str] = None
     notes: Optional[str] = None
+    text: Optional[str] = None
 
 
 class WorkflowRequest(BaseModel):

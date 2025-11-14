@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from typing import List, Tuple
 
+from openai import OpenAI
+
+from project_agents.config.settings import get_settings
 from project_agents.models import IntakeInsights, SummaryPayload
 
 
@@ -29,12 +33,104 @@ KEYWORD_MAP = {
 }
 
 
-def analyze_prompt(
+def _extract_with_llm(
     prompt: str,
     documents: list[str] | None = None,
-) -> Tuple[SummaryPayload, list[str], IntakeInsights]:
-    """Parse the prompt into a structured summary and collect follow-up questions."""
+) -> SummaryPayload | None:
+    """Extract structured information using OpenAI LLM. Returns None if extraction fails."""
+    settings = get_settings()
+    if not settings.openai_api_key:
+        return None
 
+    documents = documents or []
+    document_context = ""
+    if documents:
+        document_context = f"\n\nUploaded documents: {', '.join(documents)}"
+
+    extraction_prompt = f"""You are a project intake assistant. Extract structured information from the following project description. The description may be in any language - extract information regardless of the language used.
+
+Project description:
+{prompt}{document_context}
+
+Extract the following information and return it as a JSON object:
+- project_title: The name or title of the project (string, default to "Untitled Project" if not found)
+- problem: What problem or opportunity is being addressed (string or null)
+- solution: How the problem will be solved or value delivered (string or null)
+- target_users: Who are the primary users or stakeholders (array of strings, empty if not found)
+- success_metrics: How success will be measured (array of strings, empty if not found)
+- constraints: Any constraints, risks, or dependencies (array of strings, empty if not found)
+- timeline: Timeline or key milestones (string or null)
+- resources: Resources, documents, or tools mentioned (array of strings, empty if not found)
+- documents: List of document names provided (array of strings, use the provided list)
+- opportunity_areas: Derived opportunities based on the project (array of strings, empty if not found)
+
+Return ONLY valid JSON, no additional text. Example format:
+{{
+  "project_title": "Example Project",
+  "problem": "Users struggle with X",
+  "solution": "We will build Y",
+  "target_users": ["students", "teachers"],
+  "success_metrics": ["25% increase in engagement"],
+  "constraints": ["Budget cap $200k"],
+  "timeline": "6 months",
+  "resources": ["Existing API", "Design system"],
+  "documents": {json.dumps(documents)},
+  "opportunity_areas": ["Deliver the solution: Y"]
+}}"""
+
+    try:
+        client = OpenAI(api_key=settings.openai_api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant that extracts structured information from project descriptions. Always respond with valid JSON only.",
+                },
+                {"role": "user", "content": extraction_prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.3,
+            max_tokens=1000,
+        )
+
+        content = response.choices[0].message.content
+        if not content:
+            return None
+
+        # Parse JSON response
+        data = json.loads(content)
+
+        # Build SummaryPayload from extracted data
+        summary = SummaryPayload(
+            project_title=data.get("project_title", "Untitled Project"),
+            problem=data.get("problem"),
+            solution=data.get("solution"),
+            target_users=data.get("target_users", []),
+            success_metrics=data.get("success_metrics", []),
+            constraints=data.get("constraints", []),
+            timeline=data.get("timeline"),
+            resources=data.get("resources", []),
+            documents=data.get("documents", documents),
+            opportunity_areas=data.get("opportunity_areas", []),
+        )
+
+        # Derive opportunity areas if not provided
+        if not summary.opportunity_areas:
+            summary.opportunity_areas = _derive_opportunities(summary)
+
+        return summary
+
+    except Exception:  # noqa: BLE001
+        # Return None on any error to trigger fallback
+        return None
+
+
+def _extract_with_keywords(
+    prompt: str,
+    documents: list[str] | None = None,
+) -> SummaryPayload:
+    """Extract structured information using keyword-based heuristics (fallback method)."""
     documents = documents or []
     sentences = _sentences(prompt)
 
@@ -66,6 +162,27 @@ def analyze_prompt(
     if not summary.opportunity_areas:
         summary.opportunity_areas = _derive_opportunities(summary)
 
+    return summary
+
+
+def analyze_prompt(
+    prompt: str,
+    documents: list[str] | None = None,
+) -> Tuple[SummaryPayload, list[str], IntakeInsights]:
+    """Parse the prompt into a structured summary and collect follow-up questions.
+    
+    Tries LLM-based extraction first, falls back to keyword-based extraction if LLM fails.
+    """
+    documents = documents or []
+
+    # Try LLM extraction first
+    summary = _extract_with_llm(prompt, documents)
+
+    # Fallback to keyword-based extraction if LLM fails
+    if summary is None:
+        summary = _extract_with_keywords(prompt, documents)
+
+    # Generate follow-up questions and insights
     captured_fields: list[str] = []
     missing: list[str] = []
 

@@ -65,15 +65,21 @@ def generate_follow_up_message(
         try:
             client = OpenAI(api_key=settings.openai_api_key)
             prompt = _build_prompt(summary, follow_ups, insights)
-            response = client.responses.create(
-                model="gpt-4.1-mini",
-                input=prompt,
-                max_output_tokens=256,
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an empathetic project intake assistant. Be friendly, natural, and conversational.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=256,
                 temperature=0.4,
             )
-            content = response.output_text.strip()
-            if content:
-                return content
+            content = response.choices[0].message.content
+            if content and content.strip():
+                return content.strip()
         except Exception:  # noqa: BLE001
             pass
 

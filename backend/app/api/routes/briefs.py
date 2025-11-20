@@ -79,6 +79,11 @@ async def run_brief_generation(
     )
 
     agent_model = AgentRunModel.model_validate(workflow_output)
+    
+    # Check if document exists for this thread_id
+    existing_doc = await database["brief_runs"].find_one({"thread_id": agent_model.thread_id})
+    
+    now = datetime.now(timezone.utc)
     document = {
         "conversation": conversation_payload,
         "documents": document_payload,
@@ -87,10 +92,27 @@ async def run_brief_generation(
         "follow_up_questions": agent_model.follow_up_questions,
         "thread_id": agent_model.thread_id,
         "assistant_message": agent_model.assistant_message,
-        "created_at": datetime.now(timezone.utc),
+        "updated_at": now,
     }
-
-    result = await database["brief_runs"].insert_one(document)
+    
+    # If document exists, preserve created_at; otherwise set it
+    if existing_doc:
+        document["created_at"] = existing_doc.get("created_at", now)
+        result = await database["brief_runs"].update_one(
+            {"thread_id": agent_model.thread_id},
+            {"$set": document},
+        )
+        run_id = str(existing_doc["_id"])
+    else:
+        document["created_at"] = now
+        result = await database["brief_runs"].update_one(
+            {"thread_id": agent_model.thread_id},
+            {"$set": document},
+            upsert=True,
+        )
+        # Get the document ID (either existing or newly created)
+        updated_doc = await database["brief_runs"].find_one({"thread_id": agent_model.thread_id})
+        run_id = str(updated_doc["_id"]) if updated_doc else ""
 
     return BriefResponse(
         summary=agent_model.summary,
@@ -98,6 +120,6 @@ async def run_brief_generation(
         follow_up_questions=agent_model.follow_up_questions,
         thread_id=agent_model.thread_id,
         assistant_message=agent_model.assistant_message,
-        run_id=str(result.inserted_id),
+        run_id=run_id,
     )
 

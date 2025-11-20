@@ -59,3 +59,8 @@ def _to_message(turn: ConversationTurn) -> BaseMessage:
         return SystemMessage(content=content)
     return HumanMessage(content=content)
 
+
+def to_message(turn: ConversationTurn) -> BaseMessage:
+    """Convert a ConversationTurn to a LangChain BaseMessage. Public API."""
+    return _to_message(turn)
+

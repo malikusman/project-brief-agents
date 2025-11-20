@@ -6,6 +6,8 @@ from typing import Any, TypedDict
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
+from project_agents.intake.question_queue import QuestionItem
+
 
 class ConversationTurn(TypedDict):
     """Serialized representation of a conversation message."""
@@ -32,7 +34,9 @@ class ProjectState(TypedDict, total=False):
     documents: list[DocumentReference]
     summary: dict[str, Any]
     brief: dict[str, Any]
-    follow_up_questions: list[str]
+    question_queue: list[QuestionItem]  # Prioritized queue of questions
+    current_questions: list[QuestionItem]  # 1-2 questions currently being asked
+    follow_up_questions: list[str]  # Backward compatibility (kept for now)
     assistant_message: str
 
 

@@ -57,7 +57,23 @@ async def run_brief_generation(
 ) -> BriefResponse:
     """Trigger the agents workflow, persist the result, and return the structured brief."""
 
-    conversation_payload = [turn.model_dump() for turn in payload.conversation or []]
+    # If thread_id exists, fetch previous conversation from DB and merge with new messages
+    if payload.thread_id:
+        existing_run = await database["brief_runs"].find_one({"thread_id": payload.thread_id})
+        if existing_run:
+            # Get previous conversation from DB
+            previous_conversation = existing_run.get("conversation", [])
+            # Get new messages from payload (if any)
+            new_messages = [turn.model_dump() for turn in payload.conversation or []]
+            # Merge: previous conversation + new messages
+            conversation_payload = previous_conversation + new_messages
+        else:
+            # Thread ID provided but no existing run - use payload conversation
+            conversation_payload = [turn.model_dump() for turn in payload.conversation or []]
+    else:
+        # No thread_id - first message, use payload conversation
+        conversation_payload = [turn.model_dump() for turn in payload.conversation or []]
+    
     document_payload = []
     for doc in payload.documents:
         doc_data = doc.model_dump()

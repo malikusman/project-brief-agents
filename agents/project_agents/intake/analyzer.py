@@ -9,6 +9,7 @@ from openai import OpenAI
 
 from project_agents.config.settings import get_settings
 from project_agents.models import IntakeInsights, SummaryPayload
+from project_agents.intake.question_queue import QuestionItem, build_question_queue
 
 
 SUMMARY_FIELDS = {
@@ -168,10 +169,11 @@ def _extract_with_keywords(
 def analyze_prompt(
     prompt: str,
     documents: list[str] | None = None,
-) -> Tuple[SummaryPayload, list[str], IntakeInsights]:
+) -> Tuple[SummaryPayload, list[QuestionItem], IntakeInsights]:
     """Parse the prompt into a structured summary and collect follow-up questions.
     
     Tries LLM-based extraction first, falls back to keyword-based extraction if LLM fails.
+    Returns a prioritized question queue instead of a flat list.
     """
     documents = documents or []
 
@@ -182,23 +184,42 @@ def analyze_prompt(
     if summary is None:
         summary = _extract_with_keywords(prompt, documents)
 
-    # Generate follow-up questions and insights
+    # Build prioritized question queue
+    question_queue = build_question_queue(summary)
+
+    # Generate insights (for backward compatibility and tone generation)
     captured_fields: list[str] = []
-    missing: list[str] = []
+    missing_fields: list[str] = []
 
     for field, question in SUMMARY_FIELDS.items():
         value = getattr(summary, field)
-        if value:
+        # Check if field is actually captured (not default/empty)
+        is_captured = False
+        if field == "project_title":
+            # project_title has default "Untitled Project" - only count as captured if user provided a real title
+            is_captured = value and value != "Untitled Project" and value.strip()
+        elif isinstance(value, list):
+            is_captured = len(value) > 0
+        elif isinstance(value, str):
+            is_captured = bool(value and value.strip())
+        else:
+            is_captured = value is not None
+        
+        if is_captured:
             captured_fields.append(field.replace("_", " "))
         else:
-            missing.append(question)
+            missing_fields.append(question.replace("What ", "").replace("How ", "").replace("Are ", "").rstrip("?"))
 
     insights = IntakeInsights(
         captured_fields=captured_fields,
-        missing_fields=[question.replace("What ", "").replace("How ", "").replace("Are ", "").rstrip("?") for question in missing],
+        missing_fields=missing_fields,
     )
 
-    return summary, missing, insights
+    # For backward compatibility, also return list of question strings
+    # (nodes.py will be updated to use the queue directly)
+    follow_up_questions = [item["question"] for item in question_queue]
+
+    return summary, question_queue, insights
 
 
 def _sentences(text: str) -> list[str]:

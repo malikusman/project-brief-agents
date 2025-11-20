@@ -23,9 +23,9 @@ function AppContent() {
   } = useBriefWorkflow()
 
   const handleSend = (turn: ConversationTurn) => {
-    const nextConversation = [...conversation, turn]
     appendMessage(turn)
-    runWorkflow({ conversation: nextConversation })
+    // Send only the new message - backend will fetch previous conversation from DB
+    runWorkflow({ conversation: [turn] })
   }
 
   const handleReset = () => {

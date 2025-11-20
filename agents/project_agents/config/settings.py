@@ -38,6 +38,12 @@ class Settings(BaseSettings):
         alias="BRIEF_SYSTEM_PROMPT_PATH",
     )
 
+    conversation_window_size: int = Field(
+        default=15,
+        alias="CONVERSATION_WINDOW_SIZE",
+        description="Number of recent messages to include in context window",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

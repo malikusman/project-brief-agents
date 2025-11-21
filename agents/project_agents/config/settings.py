@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
 
     mongo_uri: str = Field(
-        default="mongodb://localhost:27017/project_brief", alias="MONGODB_URI"
+        default="mongodb://root:example@localhost:27017/project_brief?authSource=admin",
+        alias="MONGODB_URI",
     )
     mongo_database: str = Field(default="project_brief", alias="MONGODB_DATABASE")
     mongo_collection: str = Field(default="agent_state", alias="MONGODB_COLLECTION")

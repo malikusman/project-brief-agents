@@ -28,7 +28,8 @@ def build_intake_node() -> RunnableLambda:
         # document_texts = [doc.get("text", "") for doc in documents if doc.get("text")]
         # prompt_segments = user_messages + document_texts
         # prompt_text = "\n".join(segment for segment in prompt_segments if segment)
-        document_names = [doc.get("name", "") or doc.get("id", "") for doc in documents] if documents else []
+        # document_names = [doc.get("name", "") or doc.get("id", "") for doc in documents] if documents else []
+        document_names = []  # Documents disabled for now
 
         summary_payload, question_queue, insights = analyze_prompt(prompt_text, document_names)
         
@@ -56,7 +57,7 @@ def build_intake_node() -> RunnableLambda:
         return {
             "messages": state.get("messages", []) + [summary_message],
             "conversation": conversation,
-            "documents": documents,
+            "documents": [],  # Documents disabled for now
             "summary": summary_payload.model_dump(),
             "question_queue": updated_queue,
             "current_questions": current_questions,

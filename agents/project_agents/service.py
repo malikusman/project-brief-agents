@@ -66,18 +66,20 @@ def run_project_brief_workflow(
     if not conversation_list:
         raise ValueError("conversation must contain at least one message.")
 
+    # Documents disabled for now
+    # document_list: list[DocumentReference] = []
+    # if documents:
+    #     for doc in documents:
+    #         document_list.append(
+    #             DocumentReference(
+    #                 id=str(doc.get("id", "")),
+    #                 name=str(doc.get("name", "")),
+    #                 url=doc.get("url"),
+    #                 notes=doc.get("notes"),
+    #                 text=doc.get("text"),
+    #             )
+    #         )
     document_list: list[DocumentReference] = []
-    if documents:
-        for doc in documents:
-            document_list.append(
-                DocumentReference(
-                    id=str(doc.get("id", "")),
-                    name=str(doc.get("name", "")),
-                    url=doc.get("url"),
-                    notes=doc.get("notes"),
-                    text=doc.get("text"),
-                )
-            )
 
     graph = build_project_brief_graph()
     thread_identifier = thread_id or generate_thread_id()
@@ -91,14 +93,17 @@ def run_project_brief_workflow(
             if current_state and current_state.values:
                 existing_state = current_state.values
                 existing_conversation = existing_state.get("conversation", [])
-                existing_documents = existing_state.get("documents", [])
+                # Documents disabled for now
+                # existing_documents = existing_state.get("documents", [])
 
                 # Extract only new messages and documents
                 new_messages = _extract_new_messages(conversation_list, existing_conversation)
-                merged_documents = _merge_documents(document_list, existing_documents)
+                # Documents disabled for now
+                # merged_documents = _merge_documents(document_list, existing_documents)
+                merged_documents: list[DocumentReference] = []
 
                 # If there are new messages or documents, merge them into existing state
-                if new_messages or merged_documents != existing_documents:
+                if new_messages:  # Removed document check
                     # Merge new messages into existing conversation
                     merged_conversation = list(existing_conversation) + new_messages
 
@@ -108,7 +113,7 @@ def run_project_brief_workflow(
                     new_messages_langchain = [to_message(turn) for turn in new_messages]
                     update_state: ProjectState = {
                         "conversation": merged_conversation,
-                        "documents": merged_documents,
+                        "documents": [],  # Documents disabled for now
                         "messages": existing_state.get("messages", []) + new_messages_langchain,
                     }
 
@@ -119,15 +124,15 @@ def run_project_brief_workflow(
                     result = existing_state
             else:
                 # No checkpoint exists, create fresh state
-                initial_state = initialize_state(conversation_list, document_list)
+                initial_state = initialize_state(conversation_list, [])  # Documents disabled
                 result = graph.invoke(initial_state, config=config)
         except Exception:
             # If checkpoint retrieval fails, fall back to fresh state
-            initial_state = initialize_state(conversation_list, document_list)
+            initial_state = initialize_state(conversation_list, [])  # Documents disabled
             result = graph.invoke(initial_state, config=config)
     else:
         # First time - create fresh state
-        initial_state = initialize_state(conversation_list, document_list)
+        initial_state = initialize_state(conversation_list, [])  # Documents disabled
         result = graph.invoke(initial_state, config=config)
 
     summary_payload = SummaryPayload(**result.get("summary", {}))

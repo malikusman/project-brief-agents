@@ -12,12 +12,14 @@ def get_recent_messages(
 ) -> str:
     """Get recent messages from conversation, keeping only last N messages.
     
+    Includes both user and assistant messages to maintain conversation context.
+    
     Args:
-        conversation: List of conversation turns
+        conversation: List of conversation turns (user and assistant messages)
         max_messages: Maximum number of messages to include (default: from settings, default: 15)
     
     Returns:
-        Concatenated conversation text from last N messages
+        Formatted conversation text with alternating user/assistant messages from last N messages
     """
     if not conversation:
         return ""
@@ -27,17 +29,25 @@ def get_recent_messages(
         settings = get_settings()
         max_messages = settings.conversation_window_size
     
-    # Take only user messages
-    user_messages = [
-        turn["content"]
-        for turn in conversation
-        if turn.get("role", "user").lower() == "user"
-    ]
+    # Keep last N messages total (both user and assistant)
+    recent_turns = conversation[-max_messages:] if len(conversation) > max_messages else conversation
     
-    # Limit to last N messages
-    if len(user_messages) > max_messages:
-        user_messages = user_messages[-max_messages:]
+    # Format as alternating user/assistant messages
+    formatted_messages = []
+    for turn in recent_turns:
+        role = turn.get("role", "user").lower()
+        content = turn.get("content", "").strip()
+        if not content:
+            continue
+        
+        if role == "assistant":
+            formatted_messages.append(f"Assistant: {content}")
+        elif role == "user":
+            formatted_messages.append(f"User: {content}")
+        else:
+            # Handle system or other roles
+            formatted_messages.append(f"{role.capitalize()}: {content}")
     
-    # Combine messages
-    return "\n".join(msg for msg in user_messages if msg)
+    # Combine messages with newlines
+    return "\n".join(formatted_messages)
 

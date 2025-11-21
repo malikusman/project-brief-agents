@@ -74,19 +74,21 @@ async def run_brief_generation(
         # No thread_id - first message, use payload conversation
         conversation_payload = [turn.model_dump() for turn in payload.conversation or []]
     
+    # Documents disabled for now
+    # document_payload = []
+    # for doc in payload.documents:
+    #     doc_data = doc.model_dump()
+    #     text = doc_data.get("text")
+    #     doc_id = doc_data.get("id")
+    #     if doc_id:
+    #         stored = await database["documents"].find_one({"id": doc_id})
+    #         if stored:
+    #             text = stored.get("text")
+    #             doc_data.setdefault("name", stored.get("name"))
+    #     if text:
+    #         doc_data["text"] = text
+    #     document_payload.append(doc_data)
     document_payload = []
-    for doc in payload.documents:
-        doc_data = doc.model_dump()
-        text = doc_data.get("text")
-        doc_id = doc_data.get("id")
-        if doc_id:
-            stored = await database["documents"].find_one({"id": doc_id})
-            if stored:
-                text = stored.get("text")
-                doc_data.setdefault("name", stored.get("name"))
-        if text:
-            doc_data["text"] = text
-        document_payload.append(doc_data)
 
     workflow_output = await agents_client.run_workflow(
         conversation=conversation_payload,
@@ -95,6 +97,13 @@ async def run_brief_generation(
     )
 
     agent_model = AgentRunModel.model_validate(workflow_output)
+    
+    # Append assistant message to conversation array for full conversation history
+    if agent_model.assistant_message:
+        conversation_payload.append({
+            "role": "assistant",
+            "content": agent_model.assistant_message
+        })
     
     # Check if document exists for this thread_id
     existing_doc = await database["brief_runs"].find_one({"thread_id": agent_model.thread_id})
